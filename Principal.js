@@ -1,26 +1,49 @@
 const juego = new Phaser.Game(800, 220, Phaser.CANVAS, 'bloque_juego');
 
-let cursorparamover;//para mover el terreno conforme se aprieta las flechitas
 let tileSprite;//para actualizar el movimiento del terreno, darle macarena
-let limitesTerreno=0;//pa que no se salga de los limites del nivel
-let Marco;//el personaje
+let limitesTerreno = 0;//pa que no se salga de los limites del nivel
 let Mapa;
 let Layer;
-let Mar;
+let Marco;
+let Cursors;
 
 class MarcoPlayer extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'Quieto');
         this.animations.add('Quiet', [0, 1, 2], 3, true);
+        /*
+        Marco.animations.add('CorreR', [0, 2, 3, 4, 5, 6], 10, true);//Agarro solo un par de frames porque los faltantes estan mal cortados CorreR = [0,2,3,4,5,6] frames de Correr
+        Marco.animations.add('QuietO', [0, 1, 2], 3, true);
+        */
     }
 
-    mover() {
-        this.x += 1;
+    mover(cursors) {
+        if (cursors.up.isDown) {
+            if (this.body.onFloor()) {
+                this.body.velocity.y = -200;
+            }
+        }
+
+        if (cursors.right.isDown && Marco.x <= 770) {
+            this.x++;
+            if (this.x >= 600 && limitesTerreno < 460) {
+                tileSprite.tilePosition.x -= 6;
+                this.x--;
+                limitesTerreno++;
+
+            }
+            if (limitesTerreno >= 460) {
+                this.x++;
+            }
+        }
+        if (cursors.left.isDown && this.x !== 10) {
+            this.x--;
+        }
     }
 
-    update() {
+    updateSpecial(cursors) {
         this.animations.play('Quiet');
-        //this.mover();
+        this.mover(cursors);
     }
 }
 
@@ -37,61 +60,19 @@ let Estado = {
         juego.physics.startSystem(Phaser.Physics.ARCADE);
 
         tileSprite = juego.add.tileSprite(0, 0, 800, 220, 'fondoterreno');//muestro por pantalla el terreno dandole los limites laterales, superior e inferior + el objeto
-        cursors = juego.input.keyboard.createCursorKeys();//guardo en cursors lo que se presiona por teclado
+        Cursors = juego.input.keyboard.createCursorKeys();//guardo en Cursors lo que se presiona por teclado
 
-        Mar = new MarcoPlayer(juego, 25, 160, 1);
+        Marco = new MarcoPlayer(juego, 25, 160, 1);
 
-        juego.add.existing(Mar);
-
-        //Marco=juego.add.sprite(50,160,'Correr');//asigno y muestro mi conjunto de imagenes en MarcoRun
-        Marco = juego.add.sprite(50, 160, 'Quieto');//no podes tener 2 animations.play ni dos add.sprite se superponen
+        juego.add.existing(Marco);
         juego.physics.enable(Marco);
-        juego.physics.enable(Mar);
 
         juego.physics.arcade.gravity.y = 0;
-
-
-        // for (var i = 0; i < 100; i++) {
-        //     Mar.mover();
-        // }
-        Marco.animations.add('CorreR', [0, 2, 3, 4, 5, 6], 10, true);//Agarro solo un par de frames porque los faltantes estan mal cortados CorreR = [0,2,3,4,5,6] frames de Correr
-        Marco.animations.add('QuietO', [0, 1, 2], 3, true);
     },
 
     update: function () {//se verifica frame a frame izi
-        //  Marco.animations.play('CorreR');
-
-        Marco.animations.play('QuietO');//al no poder tener 2 animations.play solo corro por defecto la QuietO y de ahi me muevo QuietO es la padre
-        Marco.body.velocity.x = 0;
-
-
-        if (cursors.up.isDown) {
-
-
-            if (Marco.body.onFloor()) {
-                Marco.body.velocity.y = -200;
-            }
-        }
-
-        if (cursors.right.isDown && Marco.x <= 770) {
-            Marco.x += 1;
-            Mar.mover();
-            if (Marco.x >= 600 && limitesTerreno < 460) {
-                tileSprite.tilePosition.x -= 6;
-                Marco.x--;
-                limitesTerreno++;
-
-            }
-            if (limitesTerreno >= 460) {
-                Marco.x++;
-            }
-        }
-        if (cursors.left.isDown && Marco.x !== 10) {
-            Marco.x--;
-        }
+        Marco.updateSpecial(Cursors);
     }
-
-
 };
 
 juego.state.add('principal', Estado);
