@@ -56,12 +56,10 @@ class MarcoPlayer extends Phaser.Sprite {
 
 let Estado = {
     preload: function () {//sube todo
-        juego.load.tilemap('mario', 'assets/super_mario.json', null, Phaser.Tilemap.TILED_JSON);
         juego.load.image('piso', 'assets/piso.png');
         juego.load.image('fondoterreno', 'assets/fondo.png');//cargo mi imagen
         juego.load.spritesheet('Correr', 'assets/Correr.png', 31.75, 40);//cargo mi conjunto de imagenes para marco y la nombro MarcoRun
         juego.load.spritesheet('Quieto', 'assets/Quieto.png', 30, 40);
-        juego.load.image('Quieto2', 'assets/Quieto.png');
     },
 
     create: function () {//se arranca solo una vez como un constructor  mas o menos
