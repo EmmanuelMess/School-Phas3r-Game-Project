@@ -1,4 +1,5 @@
 const GRAVEDAD = 250;
+const VELOCIDAD_BALAS = 400;
 const juego = new Phaser.Game(800, 220, Phaser.CANVAS, 'bloque_juego');
 
 let tileSprite;//para actualizar el movimiento del terreno, darle macarena
@@ -8,10 +9,41 @@ let Layer;
 let Marco;
 let Cursors;
 let Piso;
+let Balas = [];
+
+class Bala extends Phaser.Sprite {
+    constructor(juego, x, y) {
+        super(juego, x, y, 'bala');
+        Balas.push(this);
+
+        this.creacionTiempo = Date.now();
+        this.cargado = false;
+    }
+
+    load() {
+        this.body.gravity = 0;
+        this.body.velocity.x = VELOCIDAD_BALAS;
+    }
+
+    updateElem() {
+        if(!this.cargado) {
+            this.load();
+            this.cargado = true;
+        }
+
+        if(this.creacionTiempo > 500) {
+            let indice = Balas.indexOf(this);
+            if (indice > -1) {
+                Balas.splice(indice, 1);
+            }
+        }
+    }
+}
 
 class MarcoPlayer extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'Quieto');
+        this.enfriadoTiempoInicio = 0;
     }
 
     load() {
@@ -48,9 +80,23 @@ class MarcoPlayer extends Phaser.Sprite {
         }
     }
 
-    updateSpecial(cursors) {
+    fire() {
+        if(Date.now() - this.enfriadoTiempoInicio > 500) {
+            console.log("Fired");
+            this.enfriadoTiempoInicio = Date.now();
+            let bala = new Bala(juego, this.x + 15, this.y + 20);
+            juego.add.existing(bala);
+            juego.physics.enable(bala, Phaser.Physics.ARCADE);
+            bala.body.allowGravity = false;
+        }
+    }
+
+    updateElem(cursors) {
         this.animations.play('Quiet');
         this.mover(cursors);
+        if(cursors.space.isDown) {
+            this.fire();
+        }
     }
 }
 
@@ -58,6 +104,7 @@ let Estado = {
     preload: function () {//sube todo
         juego.load.image('piso', 'assets/piso.png');
         juego.load.image('fondoterreno', 'assets/fondo.png');//cargo mi imagen
+        juego.load.image('bala', 'assets/fireball.png');
         juego.load.spritesheet('Correr', 'assets/Correr.png', 31.75, 40);//cargo mi conjunto de imagenes para marco y la nombro MarcoRun
         juego.load.spritesheet('Quieto', 'assets/Quieto.png', 30, 40);
     },
@@ -66,7 +113,8 @@ let Estado = {
         juego.physics.startSystem(Phaser.Physics.ARCADE);
 
         tileSprite = juego.add.tileSprite(0, 0, 800, 220, 'fondoterreno');//muestro por pantalla el terreno dandole los limites laterales, superior e inferior + el objeto
-        Cursors = juego.input.keyboard.createCursorKeys();//guardo en Cursors lo que se presiona por teclado
+        Cursors = juego.input.keyboard.addKeys({'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
+            'left': Phaser.KeyCode.LEFT, 'right': Phaser.KeyCode.RIGHT, 'space': Phaser.KeyCode.SPACEBAR});
 
         juego.physics.arcade.gravity.y = GRAVEDAD;
 
@@ -90,7 +138,10 @@ let Estado = {
 
     update: function () {//se verifica frame a frame izi
         juego.physics.arcade.collide(Marco, Piso);
-        Marco.updateSpecial(Cursors);
+        Marco.updateElem(Cursors);
+        Balas.forEach(function(bala) {
+            bala.updateElem();
+        });
     }
 };
 
