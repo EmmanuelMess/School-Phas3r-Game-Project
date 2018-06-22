@@ -1,5 +1,7 @@
 const GRAVEDAD = 250;
 const VELOCIDAD_BALAS = 400;
+const ESPARCIMIRENTO = 50;
+
 const juego = new Phaser.Game(800, 220, Phaser.CANVAS, 'bloque_juego');
 
 let tileSprite;//para actualizar el movimiento del terreno, darle macarena
@@ -10,11 +12,9 @@ let Marco;
 let Cursors;
 let Piso;
 let Balas = [];
+let EnemigosACrear = [[450, 1], [1000, 4], [2000, 8], [5000, 16]]; EnemigosACrear.reverse();
 let Enemigos = [];
 let sprites;
-let cantidadenemigos = 20;
-let cantidadenemigosadd = 20;
-let generadoroleada = 0;
 
 class Bala extends Phaser.Sprite {
     constructor(juego, x, y) {
@@ -48,7 +48,7 @@ class Bala extends Phaser.Sprite {
 class Enemy extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'QuietoMummy');
-        this.scale.setTo(-1, 1);
+        this.scale.setTo(1, 1);
         //Enemigos.push(this);
     }
 
@@ -57,19 +57,19 @@ class Enemy extends Phaser.Sprite {
         this.body.collideWorldBounds = true;
     }
 
-    verificaangulo() {
-        if (Marco.x <= this.x && this.body.touching.down) {
-            this.scale.setTo(-1, 1);
-            this.body.velocity.x = -juego.rnd.integerInRange(40, 80);
-        }
-        else {
-            this.scale.setTo(1, 1); this.body.velocity.x = juego.rnd.integerInRange(8, 40);
-        }
-    }
-
     updateElem() {
         this.animations.play('QuietMummy');
-        this.verificaangulo();
+        if (Marco.x <= this.x) {
+            this.scale.setTo(-1, 1);
+            if(this.body.touching.down) {
+                this.body.velocity.x = -gaussianRandom(40, 80);
+            }
+        } else {
+            this.scale.setTo(1, 1);
+            if(this.body.touching.down) {
+                this.body.velocity.x = gaussianRandom(8, 40);
+            }
+        }
     }
 }
 
@@ -98,27 +98,15 @@ class MarcoPlayer extends Phaser.Sprite {
 
         if (cursors.right.isDown && this.x <= 770) {
             this.scale.setTo(1, 1);
-            generadoroleada++;
 
             this.x++;
             if (this.x >= 600 && limitesTerreno < 920) {
                 tileSprite.tilePosition.x -= 3;
                 this.x--;
                 limitesTerreno++;
-
             }
             if (limitesTerreno >= 920) {
                 this.x++;
-            }
-            if (generadoroleada == 750 || generadoroleada == 1125 || generadoroleada == 1500) {
-
-                for (let x = cantidadenemigos; x < (cantidadenemigos + cantidadenemigosadd); x++) {
-                    Enemigos[x] = new Enemy(juego, juego.rnd.integerInRange(100, 700), 0, 1);
-                    juego.add.existing(Enemigos[x]);
-                    juego.physics.enable(Enemigos[x]);
-                    Enemigos[x].load();
-                }
-                cantidadenemigos += cantidadenemigosadd;
             }
         }
         if (cursors.left.isDown && this.x !== 10) {
@@ -186,29 +174,37 @@ let Estado = {
             segmentoPiso.body.allowGravity = false;
             Piso.add(segmentoPiso);
         }
-
-        let px = 100;
-        let py = 0;
-
-        for (let x = 0; x < cantidadenemigos; x++) {
-            Enemigos[x] = new Enemy(juego, juego.rnd.integerInRange(px, 700), py, 1);
-            juego.add.existing(Enemigos[x]);
-            juego.physics.enable(Enemigos[x]);
-            Enemigos[x].load();
-        }
-
-
     },
 
     update: function () {//se verifica frame a frame izi
         juego.physics.arcade.collide(Marco, Piso);
         //  juego.physics.arcade.collide(sprites, Piso);
-        for (let x = 0; x < cantidadenemigos; x++) {
-            juego.physics.arcade.collide(Enemigos[x], Piso);
-
-            Enemigos[x].updateElem();
-        }
         Marco.updateElem(Cursors);
+
+        if(EnemigosACrear.length > 0) {
+            let lastEnemy = EnemigosACrear.slice(-1).pop();
+            if (lastEnemy[0] < Marco.x + 450) {
+                let xEnemigo = lastEnemy[0];
+                let cantEnemigos = lastEnemy[1];
+
+                for (let i = 0; i < cantEnemigos; i++) {
+                    let x = gaussianRandom(xEnemigo - (ESPARCIMIRENTO / 2), xEnemigo + (ESPARCIMIRENTO / 2));
+                    let enemigo = new Enemy(juego, x, 155, 1);
+                    Enemigos.push(enemigo);
+                    juego.add.existing(enemigo);
+                    juego.physics.enable(enemigo);
+                    enemigo.load();
+                }
+
+                EnemigosACrear.pop();
+            }
+        }
+
+        Enemigos.forEach(function (enemigo) {
+            juego.physics.arcade.collide(enemigo, Piso);
+
+            enemigo.updateElem();
+        });
         Balas.forEach(function (bala) {
             bala.updateElem();
         });
@@ -217,3 +213,18 @@ let Estado = {
 
 juego.state.add('principal', Estado);
 juego.state.start('principal');
+
+//Funciona masomeno pero es rapida
+function gaussianRand() {
+    let rand = 0;
+
+    for (let i = 0; i < 6; i += 1) {
+        rand += Math.random();
+    }
+
+    return rand / 6;
+}
+
+function gaussianRandom(start, end) {
+    return Math.floor(start + gaussianRand() * (end - start + 1));
+}
