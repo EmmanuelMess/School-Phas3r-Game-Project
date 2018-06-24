@@ -40,12 +40,20 @@
         \maketitle
         \thispagestyle{empty}
     \end{titlepage}
-    \section*{Introducción}   
-    [Descripción general de la solución construida]
-    
+	\section*{Introducción}   
+	%[Descripción general de la solución construida]
+	Se presenta el trabajo practico, un juego donde el jugador tiene que luchar contra zombies para pasar el nivel. El nivel de dificultad es progresivo, es decir no se empieza con una oleada de 15. El nivel de dificultad crece exponencialmente, véase el array \verb|EnemigosACrear| en el archivo ``Principal.js''.
+	
+	A pesar de que el juego no posee tutorial, creemos intuitiva la forma de interaccion, (las teclas WASD para moverse, que son ampliamente usadas, y el espacio para disparar son una de las primeras cosas que, creemos, el jugador va a intentar).
+	
 	\section*{Desafios}
-    [Principales desafíos enfrentados durante la construcción del proyecto.]
-    	
+	%[Principales desafíos enfrentados durante la construcción del proyecto.]
+	Desafíos no se nos presentaron en la forma en la que normalmente  aparecen en proyectos con cientos de miles, o millones, de lineas. Si bien hubo que lidiar con el desconocimiento general de algunas herramientas proveídas por la plataforma GitHub, como la ``Pull request'', que no existe en git. 
+	
+	No se presento mayor dilema a la hora de separar el proyecto en archivos, ya que no iba a ser mantenido por un largo periodo de tiempo, se decidió poner todo en un solo archivo ``Principal.js''.
+	
+	Tampoco se presento mayor dilema para separar todo en clases, ya que las ideas de ``objeto'' son muy fáciles de implementar en un videojuego, cosas como una `bala' o un `zombi' son claramente clases; y, claramente, el juego en sí es un objeto del cual solo existe una instancia, ``singleton''. Aunque esta ultima no esta expresada en código como tal, el juego es simplemente un diccionario de funciones, por la forma en que Phaser trata al juego y como ECMAScript trata a las clases y objetos.
+
    	\section*{Ejemplos}
    	
     \subsection*{Instancia de clase}
