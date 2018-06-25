@@ -13,10 +13,14 @@
 
 \usepackage{changepage}%Para que la lista de items este indentada y se pueda separar en varias paginas
 
+\usepackage[hyphens]{url}%Para añadir links
+
 \usepackage{graphicx}%Para añadir imagenes
 \usepackage{flafter}%Imagenes aparecen entre texto
 
 \newcommand{\insertverbbox}{{\addvbuffer[6pt 3pt]{\theverbbox}\par}}
+
+\urldef\inserturl\url{https://github.com/EmmanuelMess/School-Phas3r-Game-Project}
 
 \title{\textbf{{\small Acerca del}\\
 		Videojuego\\
@@ -25,7 +29,7 @@
 		{\small y el sistema de control de versiones}\\
 		Git\\
 		{\small y almacenado en}\\
-		GitHub\footnote{https://github.com/EmmanuelMess/School-Phas3r-Game-Project}\\
+		GitHub\footnote{\inserturl}\\
 		{\small trabajo práctico para}\\
 		Programación Orientada A Objetos}\\
 	Profesor: Mariano D'agostino}
@@ -99,8 +103,9 @@
 	\insertverbbox
     
    	\section*{Mejoras posibles}
-	Para una guía más actualizada y más completa véase la pagina de issues (filtrando por ``enhancements'') en GitHub
-	\footnote{https://github.com/EmmanuelMess/School-Phas3r-Game-Project/issues?q=is\%3Aissue+is\%3Aopen+sort\%3Aupdated-desc+label\%3Aenhancement}.
+   	\urldef\inserturl\url{https://github.com/EmmanuelMess/School-Phas3r-Game-Project/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3Aenhancement}
+   		
+	Para una guía más actualizada y más completa véase la pagina de issues (filtrando por ``enhancements'') en GitHub\footnote{\inserturl}.
 	
    	\subsection*{[Mejora 1]}
 	
