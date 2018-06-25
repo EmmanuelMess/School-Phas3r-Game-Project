@@ -18,6 +18,8 @@
 \usepackage{graphicx}%Para añadir imagenes
 \usepackage{flafter}%Imagenes aparecen entre texto
 
+\usepackage{csquotes}%%citas
+
 \newcommand{\insertverbbox}{{\addvbuffer[6pt 3pt]{\theverbbox}\par}}
 
 \urldef\inserturl\url{https://github.com/EmmanuelMess/School-Phas3r-Game-Project}
@@ -107,16 +109,21 @@
    		
 	Para una guía más actualizada y más completa véase la pagina de issues (filtrando por ``enhancements'') en GitHub\footnote{\inserturl}.
 	
-   	\subsection*{[Mejora 1]}
+   	\subsection*{Un sistema de niveles}
 	
-	[texto]
+	Más niveles, un menú con más niveles. Un sistema de progreso donde el jugador pueda avanzar y enfrentarse a enemigos más fuertes.
 	
-	\subsection*{[Mejora 2]}
+	\subsection*{Un mecanismo de experiencia}
 	
-	[texto]
+	Un sistema de experiencia con contenido desbloqueable para otorgar más fuerza en los ataques. Mejoras graduales al jugador ayudarian a contrarrestar los enemigos más fuertes si se implementaran más niveles.
 	
-	\subsection*{[Mejora 3]}
-
-	[texto]
+	\subsection*{Actualizar a la versión 3 del motor Phaser}
+	
+	Como dice el FAQ (preguntas frecuentes, por sus siglas en ingles) de Phaser 3 (traducción)\footnote{Véase la pregunta tres en \url{https://phaser.io/phaser3/faq}}:
+	\begin{displayquote}
+	 	...como v3 otorga un montón de nuevas formas de lograr objetivos comunes. Te darán la posibilidad de que tu código sea más claro y más estructurado. Aprovechalo.
+	\end{displayquote}
+	
+	Pero aún hay pocos ejemplos y documentación con respecto a la nueva versión, por lo que se prefirió usar la v2. En un futuro debería moverse el proyecto para aprovechar la nueva versión.
 
 \end{document}
