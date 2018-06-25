@@ -12,25 +12,41 @@ let Marco;
 let Cursors;
 let Piso;
 let Balas = [];
-let EnemigosACrear = [[450, 1], [1000, 4], [2000, 8], [5000, 16]]; EnemigosACrear.reverse();
+let EnemigosACrear = [[0, 10], [450, 4], [750, 8], [1125, 16], [1500, 32]]; EnemigosACrear.reverse();
 let Enemigos = [];
 let sprites;
-
+let generadoroleada = 0;
+let izqoder = 0;
+let izqodermummy;
+//let vari = 0;
 class Bala extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'bala');
         Balas.push(this);
-
         this.creacionTiempo = Date.now();
         this.cargado = false;
     }
 
     load() {
-        this.body.gravity = 0;
-        this.body.velocity.x = VELOCIDAD_BALAS;
+        this.body.gravity = 0
+        if (izqoder == 0) {
+            this.body.velocity.x = VELOCIDAD_BALAS;
+            this.scale.setTo(1, 1);
+
+        }
+        if (izqoder == 1) {
+            this.body.velocity.x = -VELOCIDAD_BALAS;
+            this.x = Marco.x - 30;
+            this.scale.setTo(-1, 1);
+
+
+        }
     }
 
     updateElem() {
+
+
+
         if (!this.cargado) {
             this.load();
             this.cargado = true;
@@ -39,7 +55,7 @@ class Bala extends Phaser.Sprite {
         if (this.creacionTiempo > 500) {
             let indice = Balas.indexOf(this);
             if (indice > -1) {
-                Balas.splice(indice, 1);
+                // Balas.splice(indice, 1);
             }
         }
     }
@@ -60,13 +76,18 @@ class Enemy extends Phaser.Sprite {
     updateElem() {
         this.animations.play('QuietMummy');
         if (Marco.x <= this.x) {
+            //  if (izqodermummy == 1) { this.x = this.x - 37; }
+            izqodermummy = 0;
             this.scale.setTo(-1, 1);
-            if(this.body.touching.down) {
+            if (this.body.touching.down) {
                 this.body.velocity.x = -gaussianRandom(40, 80);
+                // this.x = 100;
             }
         } else {
+            //  if (izqodermummy == 0) { this.x = this.x + 37; }
+            izqodermummy = 1;
             this.scale.setTo(1, 1);
-            if(this.body.touching.down) {
+            if (this.body.touching.down) {
                 this.body.velocity.x = gaussianRandom(8, 40);
             }
         }
@@ -76,13 +97,15 @@ class Enemy extends Phaser.Sprite {
 class MarcoPlayer extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'Quieto');
+        //super(juego, x, y, 'Correr');
         this.enfriadoTiempoInicio = 0;
     }
 
     load() {
         this.animations.add('Quiet', [0, 1, 2], 3, true);
+        // this.animations.add('Correr', [3, 4, 5], 3, true);
         this.body.collideWorldBounds = true;
-
+        // this.animations.play('Quiet', 3, true);
         //FIXUP: Agarro solo un par de frames porque los faltantes estan mal cortados CorreR = [0,2,3,4,5,6] frames de Correr
         //Marco.animations.add('CorreR', [0, 2, 3, 4, 5, 6], 10, true);
     }
@@ -97,8 +120,11 @@ class MarcoPlayer extends Phaser.Sprite {
         }
 
         if (cursors.right.isDown && this.x <= 770) {
+            //  this.animations.play('Correr');
+            if (izqoder == 1) { this.x = this.x - 30; }
+            izqoder = 0;
             this.scale.setTo(1, 1);
-
+            generadoroleada++;
             this.x++;
             if (this.x >= 600 && limitesTerreno < 920) {
                 tileSprite.tilePosition.x -= 3;
@@ -110,6 +136,8 @@ class MarcoPlayer extends Phaser.Sprite {
             }
         }
         if (cursors.left.isDown && this.x !== 10) {
+            if (izqoder == 0) { this.x = this.x + 30; }
+            izqoder = 1;
             this.scale.setTo(-1, 1);
 
             this.x--;
@@ -181,15 +209,15 @@ let Estado = {
         //  juego.physics.arcade.collide(sprites, Piso);
         Marco.updateElem(Cursors);
 
-        if(EnemigosACrear.length > 0) {
+        if (EnemigosACrear.length > 0) {
             let lastEnemy = EnemigosACrear.slice(-1).pop();
-            if (lastEnemy[0] < Marco.x + 450) {
+            if (lastEnemy[0] == generadoroleada) {
                 let xEnemigo = lastEnemy[0];
                 let cantEnemigos = lastEnemy[1];
 
                 for (let i = 0; i < cantEnemigos; i++) {
-                    let x = gaussianRandom(xEnemigo - (ESPARCIMIRENTO / 2), xEnemigo + (ESPARCIMIRENTO / 2));
-                    let enemigo = new Enemy(juego, x, 155, 1);
+                    //    let x = gaussianRandom(xEnemigo - (ESPARCIMIRENTO*10), xEnemigo + (ESPARCIMIRENTO*10));
+                    let enemigo = new Enemy(juego, juego.rnd.integerInRange(100, 700), 0, 1);
                     Enemigos.push(enemigo);
                     juego.add.existing(enemigo);
                     juego.physics.enable(enemigo);
@@ -200,14 +228,48 @@ let Estado = {
             }
         }
 
+
+
         Enemigos.forEach(function (enemigo) {
             juego.physics.arcade.collide(enemigo, Piso);
+            if (enemigo != null) {
+                enemigo.updateElem();
+            }
+        });
 
-            enemigo.updateElem();
-        });
         Balas.forEach(function (bala) {
-            bala.updateElem();
+            if (bala != null) {
+                bala.updateElem();
+            }
         });
+
+
+        console.log(Balas.length);
+
+        for (let i = 0; i < Enemigos.length; i++) {
+            for (let j = 0; j < Balas.length; j++) {
+                if (Enemigos[i] != null && Balas[j] != null) {
+                    if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Balas[j].x < 800) {
+                        if (izqoder == 0) {
+                            // Enemigos[i].x = 700;
+                            //  Balas[j].x = 800;
+                            Balas[j].kill();
+                            Balas[j] = null;
+                            Enemigos[i].kill();
+                            Enemigos[i] = null;
+                        }
+                        if (izqoder == 1) {
+                            //  Enemigos[i].x = 700; Balas[j].x = 0;
+                            Balas[j].kill();
+                            Balas[j] = null;
+                            Enemigos[i].kill();
+                            Enemigos[i] = null;
+                        }
+                    }
+                }
+            }
+        }
+
     }
 };
 
@@ -228,3 +290,4 @@ function gaussianRand() {
 function gaussianRandom(start, end) {
     return Math.floor(start + gaussianRand() * (end - start + 1));
 }
+
