@@ -254,16 +254,16 @@ let Estado = {
                             // Enemigos[i].x = 700;
                             //  Balas[j].x = 800;
                             Balas[j].kill();
-                            Balas[j] = null;
+                            Balas.splice(j, 1);
                             Enemigos[i].kill();
-                            Enemigos[i] = null;
+                            Enemigos.splice(i, 1);
                         }
                         if (izqoder == 1) {
                             //  Enemigos[i].x = 700; Balas[j].x = 0;
                             Balas[j].kill();
-                            Balas[j] = null;
+                            Balas.splice(j, 1);
                             Enemigos[i].kill();
-                            Enemigos[i] = null;
+                            Enemigos.splice(i, 1);
                         }
                     }
                 }
