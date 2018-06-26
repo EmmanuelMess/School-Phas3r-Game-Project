@@ -18,7 +18,7 @@ let sprites;
 let generadoroleada = 0;
 let izqoder = 0;
 let izqodermummy;
-//let vari = 0;
+let animacion = 0;
 class Bala extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'bala');
@@ -103,16 +103,27 @@ class MarcoPlayer extends Phaser.Sprite {
 
     load() {
         this.animations.add('Quiet', [0, 1, 2], 3, true);
-        // this.animations.add('Correr', [3, 4, 5], 3, true);
+        this.animations.add('CorreR', [3, 4, 5, 6, 7, 8, 9, 10, 11], 3, true);
+        this.animations.add('SaltO', [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22], 3, true);
+        this.animations.add('DisparO', [23, 24], 3, true);
+        this.animations.add('AgachO', [25, 26, 27, 28, 29, 30], 3, true);
+        this.animations.add('RecargA', [31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45], 3, true);
         this.body.collideWorldBounds = true;
-        // this.animations.play('Quiet', 3, true);
+        //this.animations.play('Quiet', 3, true);
         //FIXUP: Agarro solo un par de frames porque los faltantes estan mal cortados CorreR = [0,2,3,4,5,6] frames de Correr
         //Marco.animations.add('CorreR', [0, 2, 3, 4, 5, 6], 10, true);
     }
 
     mover(cursors) {
+        // this.animations.play('Quiet', 3, true);   
+        if (cursors != 'left' && cursors != 'right' && cursors != 'up' && cursors != 'down' && cursors != 'space' && animacion < 1) {
+            this.animations.play('Quiet', 3, true);
+        }
+        // if (vari == 3 && cursors != 'left' && cursors != 'right' && cursors != 'up' && cursors != 'down' && cursors != 'space') { this.animations.stop(); this.animations.play('Quiet', 3, true);vari =1; }
         if (cursors.up.isDown && this.body.touching.down) {
+            if (animacion != 1) { this.animations.stop(); this.animations.play('SaltO', 6, true); }
             this.body.velocity.y = -200;
+            animacion = 1;
         }
 
         if (this.y >= 200) {
@@ -120,7 +131,10 @@ class MarcoPlayer extends Phaser.Sprite {
         }
 
         if (cursors.right.isDown && this.x <= 770) {
-            //  this.animations.play('Correr');
+
+            if (animacion != 2) { this.animations.stop(); this.animations.play('CorreR', 8, true); }
+            animacion = 2;
+
             if (izqoder == 1) { this.x = this.x - 30; }
             izqoder = 0;
             this.scale.setTo(1, 1);
@@ -136,19 +150,38 @@ class MarcoPlayer extends Phaser.Sprite {
             }
         }
         if (cursors.left.isDown && this.x !== 10) {
+            this.scale.setTo(-1, 1);
+            if (animacion != 3) { this.animations.stop(); this.animations.play('CorreR', 8, true); }
+            animacion = 3;
             if (izqoder == 0) { this.x = this.x + 30; }
             izqoder = 1;
-            this.scale.setTo(-1, 1);
-
+            generadoroleada--;
+            // this.animations.play('CorreR', 30, true);
             this.x--;
         }
+        if (cursors.space.isDown) {
+            if (animacion != 4) { this.animations.stop(); this.animations.play('DisparO', 9, true); }
+            animacion = 4;
+
+        }
+
+        if (cursors.down.isDown) {
+            if (animacion != 5) { this.animations.stop(); this.animations.play('AgachO', 3, true); }
+            animacion = 5;
+        }
+
+        if (Balas.length % 10 == 0) {
+            if (animacion != 6) { this.animations.stop(); this.animations.play('RecargA', 3, true); }
+            animacion = 6;
+        }
+
     }
 
     fire() {
         if (Date.now() - this.enfriadoTiempoInicio > 500) {
             console.log("Fired");
             this.enfriadoTiempoInicio = Date.now();
-            let bala = new Bala(juego, this.x + 15, this.y + 20);
+            let bala = new Bala(juego, this.x + 50, this.y + 10);
             juego.add.existing(bala);
             juego.physics.enable(bala, Phaser.Physics.ARCADE);
             bala.body.allowGravity = false;
@@ -156,7 +189,7 @@ class MarcoPlayer extends Phaser.Sprite {
     }
 
     updateElem(cursors) {
-        this.animations.play('Quiet');
+        //  this.animations.play('Quiet');
         this.mover(cursors);
         if (cursors.space.isDown) {
             this.fire();
@@ -170,7 +203,7 @@ let Estado = {
         juego.load.image('fondoterreno', 'assets/fondo.png');//cargo mi imagen
         juego.load.image('bala', 'assets/fireball.png');
         juego.load.spritesheet('Correr', 'assets/Correr.png', 31.75, 40);//cargo mi conjunto de imagenes para marco y la nombro MarcoRun
-        juego.load.spritesheet('Quieto', 'assets/Quieto.png', 30, 40);
+        juego.load.spritesheet('Quieto', 'assets/Quieto.png', 55, 42);
         juego.load.spritesheet('QuietoMummy', 'assets/metalslug_mummy37x45.png', 37, 45);
 
     },
@@ -196,7 +229,7 @@ let Estado = {
         // Creo el piso
         Piso = juego.add.group();
         for (let x = 0; x < juego.width; x += 32) {
-            let segmentoPiso = juego.add.sprite(x, juego.height - 20, 'piso');
+            let segmentoPiso = juego.add.sprite(x, juego.height - 12, 'piso');
             juego.physics.enable(segmentoPiso, Phaser.Physics.ARCADE);
             segmentoPiso.body.immovable = true;
             segmentoPiso.body.allowGravity = false;
@@ -254,16 +287,16 @@ let Estado = {
                             // Enemigos[i].x = 700;
                             //  Balas[j].x = 800;
                             Balas[j].kill();
-                            Balas.splice(j, 1);
+                            Balas[j] = null;
                             Enemigos[i].kill();
-                            Enemigos.splice(i, 1);
+                            Enemigos[i] = null;
                         }
                         if (izqoder == 1) {
                             //  Enemigos[i].x = 700; Balas[j].x = 0;
                             Balas[j].kill();
-                            Balas.splice(j, 1);
+                            Balas[j] = null;
                             Enemigos[i].kill();
-                            Enemigos.splice(i, 1);
+                            Enemigos[i] = null;
                         }
                     }
                 }
