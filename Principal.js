@@ -9,18 +9,13 @@ const AnimacionEnum = Object.freeze({quieto:1, correr:2, salto:3, disparar:4, ag
 
 let TileSprite;//para actualizar el movimiento del terreno, darle macarena
 let LimitesTerreno = 0;//pa que no se salga de los limites del nivel
-let Mapa;
 let Layer;
 let Marco;
 let Cursors;
 let Piso;
 let Balas = [];
-let EnemigosACrear = [[0, 10], [450, 4], [750, 8], [1125, 16], [1500, 32]]; EnemigosACrear.reverse();
+let EnemigosACrear = [[0, 10], [450, 4], [750, 8], [1125, 16], [1500, 32]].reverse();
 let Enemigos = [];
-let sprites;
-let generadoroleada = 0;
-let IzqierdaODerecha = false;
-let Animacion = AnimacionEnum.quieto;
 
 class Bala extends Phaser.Sprite {
     constructor(juego, x, y) {
@@ -32,7 +27,7 @@ class Bala extends Phaser.Sprite {
 
     load() {
         this.body.gravity = 0;
-        if (!IzqierdaODerecha) {
+        if (!Marco.getIzquierdaODerecha()) {
             this.body.velocity.x = VELOCIDAD_BALAS;
             this.scale.setTo(1, 1);
         } else {
@@ -89,6 +84,8 @@ class MarcoPlayer extends Phaser.Sprite {
         super(juego, x, y, 'Quieto');
         this.enfriadoBalasTiempoInicio = 0;
         this.balasEnCargador = BALAS_EN_CARGADOR;
+        this.izquierdaODerecha = false;
+        this.animacion = AnimacionEnum.quieto;
     }
 
     load() {
@@ -102,7 +99,7 @@ class MarcoPlayer extends Phaser.Sprite {
     }
 
     iniciarAnimacion(animacion) {
-        if(Animacion === animacion) return;
+        if(this.animacion === animacion) return;
         let animacionNombre = 'Quiet';
         let frameRate = 3;
 
@@ -131,7 +128,7 @@ class MarcoPlayer extends Phaser.Sprite {
 
         this.animations.stop();
         this.animations.play(animacionNombre, frameRate, true);
-        Animacion = animacion;
+        this.animacion = animacion;
     }
 
     fire() {
@@ -175,12 +172,11 @@ class MarcoPlayer extends Phaser.Sprite {
             if (this.x <= 770) {
                 this.iniciarAnimacion(AnimacionEnum.correr);
 
-                if (IzqierdaODerecha) {
+                if (this.izquierdaODerecha) {
                     this.x = this.x - 30;
                 }
-                IzqierdaODerecha = false;
+                this.izquierdaODerecha = false;
                 this.scale.setTo(1, 1);
-                generadoroleada++;
                 this.x++;
                 if (this.x >= 600 && LimitesTerreno < 920) {
                     TileSprite.tilePosition.x -= 3;
@@ -195,12 +191,10 @@ class MarcoPlayer extends Phaser.Sprite {
             if (this.x !== 10) {
                 this.scale.setTo(-1, 1);
                 this.iniciarAnimacion(AnimacionEnum.correr);
-                if (!IzqierdaODerecha) {
+                if (!this.izquierdaODerecha) {
                     this.x = this.x + 30;
                 }
-                IzqierdaODerecha = true;
-                generadoroleada--;
-                // this.animations.play('CorreR', 30, true);
+                this.izquierdaODerecha = true;
                 this.x--;
             }
         } else if (cursors.space.isDown) {
@@ -210,6 +204,10 @@ class MarcoPlayer extends Phaser.Sprite {
         } else {
             this.iniciarAnimacion(AnimacionEnum.quieto);
         }
+    }
+
+    getIzquierdaODerecha() {
+        return this.izquierdaODerecha
     }
 }
 
@@ -259,12 +257,13 @@ let Estado = {
 
         if (EnemigosACrear.length > 0) {
             let lastEnemy = EnemigosACrear.slice(-1).pop();
-            if (lastEnemy[0] === generadoroleada) {
-                let xEnemigo = lastEnemy[0];
-                let cantEnemigos = lastEnemy[1];
+            let xEnemigo = lastEnemy[0];
+            let cantEnemigos = lastEnemy[1];
+
+            if (Marco.x > xEnemigo-500) {
 
                 for (let i = 0; i < cantEnemigos; i++) {
-                    let enemigo = new Enemy(JUEGO, JUEGO.rnd.integerInRange(100, 700), 0, 1);
+                    let enemigo = new Enemy(JUEGO, JUEGO.rnd.integerInRange(xEnemigo-ESPARCIMIRENTO, xEnemigo+ESPARCIMIRENTO), 0, 1);
                     Enemigos.push(enemigo);
                     JUEGO.add.existing(enemigo);
                     JUEGO.physics.enable(enemigo);
@@ -288,24 +287,13 @@ let Estado = {
             }
         });
 
-        console.log(Balas.length);
-
         for (let i = 0; i < Enemigos.length; i++) {
             for (let j = 0; j < Balas.length; j++) {
-                if (Enemigos[i] != null && Balas[j] != null) {
-                    if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Balas[j].x < 800) {
-                        if (!IzqierdaODerecha) {
-                            Balas[j].kill();
-                            Balas[j] = null;
-                            Enemigos[i].kill();
-                            Enemigos[i] = null;
-                        } else {
-                            Balas[j].kill();
-                            Balas[j] = null;
-                            Enemigos[i].kill();
-                            Enemigos[i] = null;
-                        }
-                    }
+                if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Balas[j].x < 800) {
+                    Balas[j].kill();
+                    Balas.splice(j, 1);
+                    Enemigos[i].kill();
+                    Enemigos.splice(i, 1);
                 }
             }
         }
