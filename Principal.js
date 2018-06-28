@@ -47,7 +47,7 @@ class Bala extends Phaser.Sprite {
             this.cargado = true;
         }
 
-        if (this.creacionTiempo > 500) {
+        if (this.creacionTiempo - Date.now() > 1000) {
             let indice = Balas.indexOf(this);
             if (indice > -1) {
                  Balas.splice(indice, 1);
