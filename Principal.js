@@ -1,6 +1,7 @@
 const GRAVEDAD = 250;
 const VELOCIDAD_BALAS = 400;
 const ESPARCIMIRENTO = 50;
+const BALAS_EN_CARGADOR = 6;
 
 const JUEGO = new Phaser.Game(800, 220, Phaser.CANVAS, 'bloque_juego');
 
@@ -86,7 +87,8 @@ class Enemy extends Phaser.Sprite {
 class MarcoPlayer extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'Quieto');
-        this.enfriadoTiempoInicio = 0;
+        this.enfriadoBalasTiempoInicio = 0;
+        this.balasEnCargador = BALAS_EN_CARGADOR;
     }
 
     load() {
@@ -114,7 +116,7 @@ class MarcoPlayer extends Phaser.Sprite {
                 frameRate = 6;
                 break;
             case AnimacionEnum.disparar:
-                animacionNombre = 'Dispar0';
+                animacionNombre = 'DisparO';
                 frameRate = 9;
                 break;
             case AnimacionEnum.agachar:
@@ -123,7 +125,7 @@ class MarcoPlayer extends Phaser.Sprite {
                 break;
             case AnimacionEnum.recargar:
                 animacionNombre = 'RecargA';
-                frameRate = 3;
+                frameRate = 5;
                 break;
         }
 
@@ -132,78 +134,81 @@ class MarcoPlayer extends Phaser.Sprite {
         Animacion = animacion;
     }
 
-    mover(cursors) {
-        if (!cursors.left.isDown && !cursors.right.isDown && !cursors.up.isDown && !cursors.down.isDown
-            && !cursors.space.isDown) {
-            this.iniciarAnimacion(AnimacionEnum.quieto);
-        }
-
-        if (cursors.up.isDown && this.body.touching.down) {
-            this.iniciarAnimacion(AnimacionEnum.salto);
-            this.body.velocity.y = -200;
-            Animacion = 1;
-        }
-
-        if (this.y >= 200) {
-            this.body.velocity.y = 0;
-        }
-
-        if (cursors.right.isDown && this.x <= 770) {
-            this.iniciarAnimacion(AnimacionEnum.correr);
-
-            if (IzqierdaODerecha) {
-                this.x = this.x - 30;
-            }
-            IzqierdaODerecha = false;
-            this.scale.setTo(1, 1);
-            generadoroleada++;
-            this.x++;
-            if (this.x >= 600 && LimitesTerreno < 920) {
-                TileSprite.tilePosition.x -= 3;
-                this.x--;
-                LimitesTerreno++;
-            }
-            if (LimitesTerreno >= 920) {
-                this.x++;
-            }
-        }
-        if (cursors.left.isDown && this.x !== 10) {
-            this.scale.setTo(-1, 1);
-            this.iniciarAnimacion(AnimacionEnum.correr);
-            if (!IzqierdaODerecha) { this.x = this.x + 30; }
-            IzqierdaODerecha = true;
-            generadoroleada--;
-            // this.animations.play('CorreR', 30, true);
-            this.x--;
-        }
-        if (cursors.space.isDown) {
-            this.iniciarAnimacion(AnimacionEnum.disparar);
-        }
-
-        if (cursors.down.isDown) {
-            this.iniciarAnimacion(AnimacionEnum.agachar);
-        }
-
-        if (Balas.length % 10 == 0) {
-            this.iniciarAnimacion(AnimacionEnum.recargar);
-        }
-    }
-
     fire() {
-        if (Date.now() - this.enfriadoTiempoInicio > 500) {
-            console.log("Fired");
-            this.enfriadoTiempoInicio = Date.now();
+        if (Date.now() - this.enfriadoBalasTiempoInicio > 222) {
+            this.enfriadoBalasTiempoInicio = Date.now();
+            this.balasEnCargador--;
+
             let bala = new Bala(JUEGO, this.x + 50, this.y + 10);
             JUEGO.add.existing(bala);
             JUEGO.physics.enable(bala, Phaser.Physics.ARCADE);
             bala.body.allowGravity = false;
+
+            this.iniciarAnimacion(AnimacionEnum.disparar);
+            this.enfriadoAnimacion = [Date.now(), 222];
         }
     }
 
     updateElem(cursors) {
-        this.mover(cursors);
-        if (cursors.space.isDown) {
+        if (this.y >= 200) {
+            this.body.velocity.y = 0;
+        }
+
+        if(this.enfriadoAnimacion != null) {
+            if(Date.now() - this.enfriadoAnimacion[0] < this.enfriadoAnimacion[1]) {
+                return;
+            } else {
+                this.enfriadoAnimacion = null;
+            }
+        }
+
+        if (this.balasEnCargador === 0) {
+            this.iniciarAnimacion(AnimacionEnum.recargar);
+            this.balasEnCargador = BALAS_EN_CARGADOR;
+            this.enfriadoAnimacion = [Date.now(), 3000];
+        } else if (cursors.up.isDown) {
+            if(this.body.touching.down) {
+                this.iniciarAnimacion(AnimacionEnum.salto);
+                this.body.velocity.y = -200;
+            }
+        } else if (cursors.right.isDown) {
+            if (this.x <= 770) {
+                this.iniciarAnimacion(AnimacionEnum.correr);
+
+                if (IzqierdaODerecha) {
+                    this.x = this.x - 30;
+                }
+                IzqierdaODerecha = false;
+                this.scale.setTo(1, 1);
+                generadoroleada++;
+                this.x++;
+                if (this.x >= 600 && LimitesTerreno < 920) {
+                    TileSprite.tilePosition.x -= 3;
+                    this.x--;
+                    LimitesTerreno++;
+                }
+                if (LimitesTerreno >= 920) {
+                    this.x++;
+                }
+            }
+        } else if (cursors.left.isDown) {
+            if (this.x !== 10) {
+                this.scale.setTo(-1, 1);
+                this.iniciarAnimacion(AnimacionEnum.correr);
+                if (!IzqierdaODerecha) {
+                    this.x = this.x + 30;
+                }
+                IzqierdaODerecha = true;
+                generadoroleada--;
+                // this.animations.play('CorreR', 30, true);
+                this.x--;
+            }
+        } else if (cursors.space.isDown) {
             this.fire();
+        } else if (cursors.down.isDown) {
+            this.iniciarAnimacion(AnimacionEnum.agachar);
+        } else {
+            this.iniciarAnimacion(AnimacionEnum.quieto);
         }
     }
 }
@@ -254,7 +259,7 @@ let Estado = {
 
         if (EnemigosACrear.length > 0) {
             let lastEnemy = EnemigosACrear.slice(-1).pop();
-            if (lastEnemy[0] == generadoroleada) {
+            if (lastEnemy[0] === generadoroleada) {
                 let xEnemigo = lastEnemy[0];
                 let cantEnemigos = lastEnemy[1];
 
