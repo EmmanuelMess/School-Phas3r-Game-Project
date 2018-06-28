@@ -14,7 +14,7 @@ let Marco;
 let Cursors;
 let Piso;
 let Balas = [];
-let EnemigosACrear = [[0, 10], [450, 4], [750, 8], [1125, 16], [1500, 32]].reverse();
+let EnemigosACrear = [[450, 4], [750, 8], [1125, 16], [1500, 32]].reverse();
 let Enemigos = [];
 
 class Bala extends Phaser.Sprite {
@@ -294,9 +294,7 @@ let Estado = {
 
         Enemigos.forEach(function (enemigo) {
             JUEGO.physics.arcade.collide(enemigo, Piso);
-            if (enemigo != null) {
-                enemigo.updateElem();
-            }
+            enemigo.updateElem();
         });
 
         Balas.forEach(function (bala) {
@@ -307,6 +305,8 @@ let Estado = {
 
         for (let i = 0; i < Enemigos.length; i++) {
             for (let j = 0; j < Balas.length; j++) {
+                if(Enemigos[i] === undefined) continue;//TODO fix hack
+
                 if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Balas[j].x < 800) {
                     Balas[j].kill();
                     Balas.splice(j, 1);
