@@ -68,12 +68,12 @@ class Enemy extends Phaser.Sprite {
         if (Marco.x <= this.x) {
             this.scale.setTo(-1, 1);
             if (this.body.touching.down) {
-                this.body.velocity.x = -gaussianRandom(40, 80);
+                this.body.velocity.x = -40;
             }
         } else {
             this.scale.setTo(1, 1);
             if (this.body.touching.down) {
-                this.body.velocity.x = gaussianRandom(8, 40);
+                this.body.velocity.x = 40;
             }
         }
     }
