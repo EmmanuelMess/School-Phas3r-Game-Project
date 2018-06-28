@@ -302,7 +302,7 @@ let Estado = {
             if (Controlador.convertirPosicionRelativaAAbsoluta(Marco.x) > xEnemigo-350) {
 
                 for (let i = 0; i < cantEnemigos; i++) {
-                    let enemigo = new Enemy(JUEGO, JUEGO.rnd.integerInRange(xEnemigo-ESPARCIMIRENTO, xEnemigo+ESPARCIMIRENTO), 0, 1);
+                    let enemigo = new Enemy(JUEGO, JUEGO.rnd.integerInRange(xEnemigo-ESPARCIMIRENTO, xEnemigo+ESPARCIMIRENTO), 165);
                     Enemigos.push(enemigo);
                     JUEGO.add.existing(enemigo);
                     JUEGO.physics.enable(enemigo);
@@ -326,6 +326,8 @@ let Estado = {
 
         for (let i = 0; i < Enemigos.length; i++) {
             for (let j = 0; j < Balas.length; j++) {
+                if(Enemigos[i] === undefined) continue; //TODO fix hack
+
                 if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Math.abs(Balas[j].y - (Enemigos[i].y + 22.5)) < 22.5) {
                     Balas[j].kill();
                     Balas.remove(j);
