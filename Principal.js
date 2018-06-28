@@ -55,7 +55,7 @@ class Bala extends Phaser.Sprite {
 class Enemy extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'QuietoMummy');
-        this.scale.setTo(1, 1);
+        this.mirandoALaDerecha = false;
     }
 
     load() {
@@ -63,17 +63,35 @@ class Enemy extends Phaser.Sprite {
         this.body.collideWorldBounds = true;
     }
 
+    rotarIzquierda() {
+        if(this.mirandoALaDerecha) return;
+
+        this.scale.setTo(-1, 1);
+        this.x += 37;
+
+        this.mirandoALaDerecha = true;
+    }
+
+    rotarDerecha() {
+        if(!this.mirandoALaDerecha) return;
+
+        this.scale.setTo(1, 1);
+        this.x -= 37;
+
+        this.mirandoALaDerecha = false;
+    }
+
     updateElem() {
         this.animations.play('QuietMummy');
-        if (Marco.x <= this.x) {
-            this.scale.setTo(-1, 1);
-            if (this.body.touching.down) {
-                this.body.velocity.x = -40;
-            }
-        } else {
-            this.scale.setTo(1, 1);
+        if (Marco.x > this.x) {
+            this.rotarDerecha();
             if (this.body.touching.down) {
                 this.body.velocity.x = 40;
+            }
+        } else {
+            this.rotarIzquierda();
+            if (this.body.touching.down) {
+                this.body.velocity.x = -40;
             }
         }
     }
