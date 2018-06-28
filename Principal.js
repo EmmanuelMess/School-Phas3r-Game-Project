@@ -8,7 +8,7 @@ const JUEGO = new Phaser.Game(800, 220, Phaser.CANVAS, 'bloque_juego');
 const AnimacionEnum = Object.freeze({quieto:1, correr:2, salto:3, disparar:4, agachar:5, recargar:6});
 
 let TileSprite;//para actualizar el movimiento del terreno, darle macarena
-let LimitesTerreno = 0;//pa que no se salga de los limites del nivel
+let Controlador;
 let Layer;
 let Marco;
 let Cursors;
@@ -16,6 +16,29 @@ let Piso;
 let Balas = [];
 let EnemigosACrear = [[450, 4], [750, 8], [1125, 16], [1500, 32]].reverse();
 let Enemigos = [];
+
+class ControladorFondo {
+    constructor() {
+        this.posicionAbsolutaDeInicioDeMundo = 0;
+    }
+
+    moverFondoDerecha(dX) {
+        TileSprite.tilePosition.x -= dX;
+        this.posicionAbsolutaDeInicioDeMundo += dX;
+
+        Marco.x -= dX;
+        Balas.forEach(function(bala) {
+            bala.x -= dX;
+        });
+        Enemigos.forEach(function(enemigo) {
+            enemigo.x -= dX;
+        });
+    }
+
+    convertirPosicionRelativaAAbsoluta(xRel) {
+        return this.posicionAbsolutaDeInicioDeMundo + xRel;
+    }
+}
 
 class Bala extends Phaser.Sprite {
     constructor(juego, x, y) {
@@ -195,14 +218,9 @@ class MarcoPlayer extends Phaser.Sprite {
                 }
                 this.izquierdaODerecha = false;
                 this.scale.setTo(1, 1);
-                this.x++;
-                if (this.x >= 600 && LimitesTerreno < 920) {
-                    TileSprite.tilePosition.x -= 3;
-                    this.x--;
-                    LimitesTerreno++;
-                }
-                if (LimitesTerreno >= 920) {
-                    this.x++;
+                this.x += 3;
+                if (this.x >= 300 && Controlador.convertirPosicionRelativaAAbsoluta(this.x) < 2760) {
+                    Controlador.moverFondoDerecha(3);
                 }
             }
         } else if (cursors.left.isDown) {
@@ -213,7 +231,7 @@ class MarcoPlayer extends Phaser.Sprite {
                     this.x = this.x + 30;
                 }
                 this.izquierdaODerecha = true;
-                this.x--;
+                this.x -= 3;
             }
         } else if (cursors.space.isDown) {
             this.fire();
@@ -244,6 +262,8 @@ let Estado = {
         JUEGO.physics.startSystem(Phaser.Physics.ARCADE);
 
         TileSprite = JUEGO.add.tileSprite(0, 0, 800, 220, 'fondoterreno');//muestro por pantalla el terreno dandole los limites laterales, superior e inferior + el objeto
+        Controlador = new ControladorFondo();
+
         Cursors = JUEGO.input.keyboard.addKeys({
             'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
             'left': Phaser.KeyCode.LEFT, 'right': Phaser.KeyCode.RIGHT, 'space': Phaser.KeyCode.SPACEBAR
@@ -278,7 +298,7 @@ let Estado = {
             let xEnemigo = lastEnemy[0];
             let cantEnemigos = lastEnemy[1];
 
-            if (Marco.x > xEnemigo-500) {
+            if (Controlador.convertirPosicionRelativaAAbsoluta(Marco.x) > xEnemigo-350) {
 
                 for (let i = 0; i < cantEnemigos; i++) {
                     let enemigo = new Enemy(JUEGO, JUEGO.rnd.integerInRange(xEnemigo-ESPARCIMIRENTO, xEnemigo+ESPARCIMIRENTO), 0, 1);
