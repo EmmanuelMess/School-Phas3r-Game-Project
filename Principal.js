@@ -2,10 +2,12 @@ const GRAVEDAD = 250;
 const VELOCIDAD_BALAS = 400;
 const ESPARCIMIRENTO = 50;
 
-const juego = new Phaser.Game(800, 220, Phaser.CANVAS, 'bloque_juego');
+const JUEGO = new Phaser.Game(800, 220, Phaser.CANVAS, 'bloque_juego');
 
-let tileSprite;//para actualizar el movimiento del terreno, darle macarena
-let limitesTerreno = 0;//pa que no se salga de los limites del nivel
+const AnimacionEnum = Object.freeze({quieto:1, correr:2, salto:3, disparar:4, agachar:5, recargar:6});
+
+let TileSprite;//para actualizar el movimiento del terreno, darle macarena
+let LimitesTerreno = 0;//pa que no se salga de los limites del nivel
 let Mapa;
 let Layer;
 let Marco;
@@ -16,9 +18,9 @@ let EnemigosACrear = [[0, 10], [450, 4], [750, 8], [1125, 16], [1500, 32]]; Enem
 let Enemigos = [];
 let sprites;
 let generadoroleada = 0;
-let izqoder = 0;
-let izqodermummy;
-let animacion = 0;
+let IzqierdaODerecha = false;
+let Animacion = AnimacionEnum.quieto;
+
 class Bala extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'bala');
@@ -28,25 +30,18 @@ class Bala extends Phaser.Sprite {
     }
 
     load() {
-        this.body.gravity = 0
-        if (izqoder == 0) {
+        this.body.gravity = 0;
+        if (!IzqierdaODerecha) {
             this.body.velocity.x = VELOCIDAD_BALAS;
             this.scale.setTo(1, 1);
-
-        }
-        if (izqoder == 1) {
+        } else {
             this.body.velocity.x = -VELOCIDAD_BALAS;
             this.x = Marco.x - 30;
             this.scale.setTo(-1, 1);
-
-
         }
     }
 
     updateElem() {
-
-
-
         if (!this.cargado) {
             this.load();
             this.cargado = true;
@@ -55,7 +50,7 @@ class Bala extends Phaser.Sprite {
         if (this.creacionTiempo > 500) {
             let indice = Balas.indexOf(this);
             if (indice > -1) {
-                // Balas.splice(indice, 1);
+                 Balas.splice(indice, 1);
             }
         }
     }
@@ -65,7 +60,6 @@ class Enemy extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'QuietoMummy');
         this.scale.setTo(1, 1);
-        //Enemigos.push(this);
     }
 
     load() {
@@ -76,16 +70,11 @@ class Enemy extends Phaser.Sprite {
     updateElem() {
         this.animations.play('QuietMummy');
         if (Marco.x <= this.x) {
-            //  if (izqodermummy == 1) { this.x = this.x - 37; }
-            izqodermummy = 0;
             this.scale.setTo(-1, 1);
             if (this.body.touching.down) {
                 this.body.velocity.x = -gaussianRandom(40, 80);
-                // this.x = 100;
             }
         } else {
-            //  if (izqodermummy == 0) { this.x = this.x + 37; }
-            izqodermummy = 1;
             this.scale.setTo(1, 1);
             if (this.body.touching.down) {
                 this.body.velocity.x = gaussianRandom(8, 40);
@@ -97,7 +86,6 @@ class Enemy extends Phaser.Sprite {
 class MarcoPlayer extends Phaser.Sprite {
     constructor(juego, x, y) {
         super(juego, x, y, 'Quieto');
-        //super(juego, x, y, 'Correr');
         this.enfriadoTiempoInicio = 0;
     }
 
@@ -109,21 +97,51 @@ class MarcoPlayer extends Phaser.Sprite {
         this.animations.add('AgachO', [25, 26, 27, 28, 29, 30], 3, true);
         this.animations.add('RecargA', [31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45], 3, true);
         this.body.collideWorldBounds = true;
-        //this.animations.play('Quiet', 3, true);
-        //FIXUP: Agarro solo un par de frames porque los faltantes estan mal cortados CorreR = [0,2,3,4,5,6] frames de Correr
-        //Marco.animations.add('CorreR', [0, 2, 3, 4, 5, 6], 10, true);
+    }
+
+    iniciarAnimacion(animacion) {
+        if(Animacion === animacion) return;
+        let animacionNombre = 'Quiet';
+        let frameRate = 3;
+
+        switch(animacion) {
+            case AnimacionEnum.correr:
+                animacionNombre = 'CorreR';
+                frameRate = 8;
+                break;
+            case AnimacionEnum.salto:
+                animacionNombre = 'Salt0';
+                frameRate = 6;
+                break;
+            case AnimacionEnum.disparar:
+                animacionNombre = 'Dispar0';
+                frameRate = 9;
+                break;
+            case AnimacionEnum.agachar:
+                animacionNombre = 'Agacha0';
+                frameRate = 3;
+                break;
+            case AnimacionEnum.recargar:
+                animacionNombre = 'RecargA';
+                frameRate = 3;
+                break;
+        }
+
+        this.animations.stop();
+        this.animations.play(animacionNombre, frameRate, true);
+        Animacion = animacion;
     }
 
     mover(cursors) {
-        // this.animations.play('Quiet', 3, true);   
-        if (cursors != 'left' && cursors != 'right' && cursors != 'up' && cursors != 'down' && cursors != 'space' && animacion < 1) {
-            this.animations.play('Quiet', 3, true);
+        if (!cursors.left.isDown && !cursors.right.isDown && !cursors.up.isDown && !cursors.down.isDown
+            && !cursors.space.isDown) {
+            this.iniciarAnimacion(AnimacionEnum.quieto);
         }
-        // if (vari == 3 && cursors != 'left' && cursors != 'right' && cursors != 'up' && cursors != 'down' && cursors != 'space') { this.animations.stop(); this.animations.play('Quiet', 3, true);vari =1; }
+
         if (cursors.up.isDown && this.body.touching.down) {
-            if (animacion != 1) { this.animations.stop(); this.animations.play('SaltO', 6, true); }
+            this.iniciarAnimacion(AnimacionEnum.salto);
             this.body.velocity.y = -200;
-            animacion = 1;
+            Animacion = 1;
         }
 
         if (this.y >= 200) {
@@ -131,65 +149,58 @@ class MarcoPlayer extends Phaser.Sprite {
         }
 
         if (cursors.right.isDown && this.x <= 770) {
+            this.iniciarAnimacion(AnimacionEnum.correr);
 
-            if (animacion != 2) { this.animations.stop(); this.animations.play('CorreR', 8, true); }
-            animacion = 2;
-
-            if (izqoder == 1) { this.x = this.x - 30; }
-            izqoder = 0;
+            if (IzqierdaODerecha) {
+                this.x = this.x - 30;
+            }
+            IzqierdaODerecha = false;
             this.scale.setTo(1, 1);
             generadoroleada++;
             this.x++;
-            if (this.x >= 600 && limitesTerreno < 920) {
-                tileSprite.tilePosition.x -= 3;
+            if (this.x >= 600 && LimitesTerreno < 920) {
+                TileSprite.tilePosition.x -= 3;
                 this.x--;
-                limitesTerreno++;
+                LimitesTerreno++;
             }
-            if (limitesTerreno >= 920) {
+            if (LimitesTerreno >= 920) {
                 this.x++;
             }
         }
         if (cursors.left.isDown && this.x !== 10) {
             this.scale.setTo(-1, 1);
-            if (animacion != 3) { this.animations.stop(); this.animations.play('CorreR', 8, true); }
-            animacion = 3;
-            if (izqoder == 0) { this.x = this.x + 30; }
-            izqoder = 1;
+            this.iniciarAnimacion(AnimacionEnum.correr);
+            if (!IzqierdaODerecha) { this.x = this.x + 30; }
+            IzqierdaODerecha = true;
             generadoroleada--;
             // this.animations.play('CorreR', 30, true);
             this.x--;
         }
         if (cursors.space.isDown) {
-            if (animacion != 4) { this.animations.stop(); this.animations.play('DisparO', 9, true); }
-            animacion = 4;
-
+            this.iniciarAnimacion(AnimacionEnum.disparar);
         }
 
         if (cursors.down.isDown) {
-            if (animacion != 5) { this.animations.stop(); this.animations.play('AgachO', 3, true); }
-            animacion = 5;
+            this.iniciarAnimacion(AnimacionEnum.agachar);
         }
 
         if (Balas.length % 10 == 0) {
-            if (animacion != 6) { this.animations.stop(); this.animations.play('RecargA', 3, true); }
-            animacion = 6;
+            this.iniciarAnimacion(AnimacionEnum.recargar);
         }
-
     }
 
     fire() {
         if (Date.now() - this.enfriadoTiempoInicio > 500) {
             console.log("Fired");
             this.enfriadoTiempoInicio = Date.now();
-            let bala = new Bala(juego, this.x + 50, this.y + 10);
-            juego.add.existing(bala);
-            juego.physics.enable(bala, Phaser.Physics.ARCADE);
+            let bala = new Bala(JUEGO, this.x + 50, this.y + 10);
+            JUEGO.add.existing(bala);
+            JUEGO.physics.enable(bala, Phaser.Physics.ARCADE);
             bala.body.allowGravity = false;
         }
     }
 
     updateElem(cursors) {
-        //  this.animations.play('Quiet');
         this.mover(cursors);
         if (cursors.space.isDown) {
             this.fire();
@@ -199,38 +210,38 @@ class MarcoPlayer extends Phaser.Sprite {
 
 let Estado = {
     preload: function () {//sube todo
-        juego.load.image('piso', 'assets/piso.png');
-        juego.load.image('fondoterreno', 'assets/fondo.png');//cargo mi imagen
-        juego.load.image('bala', 'assets/fireball.png');
-        juego.load.spritesheet('Correr', 'assets/Correr.png', 31.75, 40);//cargo mi conjunto de imagenes para marco y la nombro MarcoRun
-        juego.load.spritesheet('Quieto', 'assets/Quieto.png', 55, 42);
-        juego.load.spritesheet('QuietoMummy', 'assets/metalslug_mummy37x45.png', 37, 45);
+        JUEGO.load.image('piso', 'assets/piso.png');
+        JUEGO.load.image('fondoterreno', 'assets/fondo.png');//cargo mi imagen
+        JUEGO.load.image('bala', 'assets/fireball.png');
+        JUEGO.load.spritesheet('Correr', 'assets/Correr.png', 31.75, 40);//cargo mi conjunto de imagenes para marco y la nombro MarcoRun
+        JUEGO.load.spritesheet('Quieto', 'assets/Quieto.png', 55, 42);
+        JUEGO.load.spritesheet('QuietoMummy', 'assets/metalslug_mummy37x45.png', 37, 45);
 
     },
 
     create: function () {//se arranca solo una vez como un constructor  mas o menos
-        juego.physics.startSystem(Phaser.Physics.ARCADE);
+        JUEGO.physics.startSystem(Phaser.Physics.ARCADE);
 
-        tileSprite = juego.add.tileSprite(0, 0, 800, 220, 'fondoterreno');//muestro por pantalla el terreno dandole los limites laterales, superior e inferior + el objeto
-        Cursors = juego.input.keyboard.addKeys({
+        TileSprite = JUEGO.add.tileSprite(0, 0, 800, 220, 'fondoterreno');//muestro por pantalla el terreno dandole los limites laterales, superior e inferior + el objeto
+        Cursors = JUEGO.input.keyboard.addKeys({
             'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
             'left': Phaser.KeyCode.LEFT, 'right': Phaser.KeyCode.RIGHT, 'space': Phaser.KeyCode.SPACEBAR
         });
 
-        juego.physics.arcade.gravity.y = GRAVEDAD;
+        JUEGO.physics.arcade.gravity.y = GRAVEDAD;
 
-        Marco = new MarcoPlayer(juego, 35, 160, 1);
+        Marco = new MarcoPlayer(JUEGO, 35, 160, 1);
 
-        juego.add.existing(Marco);
-        juego.physics.enable(Marco);
+        JUEGO.add.existing(Marco);
+        JUEGO.physics.enable(Marco);
 
         Marco.load();
 
         // Creo el piso
-        Piso = juego.add.group();
-        for (let x = 0; x < juego.width; x += 32) {
-            let segmentoPiso = juego.add.sprite(x, juego.height - 12, 'piso');
-            juego.physics.enable(segmentoPiso, Phaser.Physics.ARCADE);
+        Piso = JUEGO.add.group();
+        for (let x = 0; x < JUEGO.width; x += 32) {
+            let segmentoPiso = JUEGO.add.sprite(x, JUEGO.height - 12, 'piso');
+            JUEGO.physics.enable(segmentoPiso, Phaser.Physics.ARCADE);
             segmentoPiso.body.immovable = true;
             segmentoPiso.body.allowGravity = false;
             Piso.add(segmentoPiso);
@@ -238,8 +249,7 @@ let Estado = {
     },
 
     update: function () {//se verifica frame a frame izi
-        juego.physics.arcade.collide(Marco, Piso);
-        //  juego.physics.arcade.collide(sprites, Piso);
+        JUEGO.physics.arcade.collide(Marco, Piso);
         Marco.updateElem(Cursors);
 
         if (EnemigosACrear.length > 0) {
@@ -249,11 +259,10 @@ let Estado = {
                 let cantEnemigos = lastEnemy[1];
 
                 for (let i = 0; i < cantEnemigos; i++) {
-                    //    let x = gaussianRandom(xEnemigo - (ESPARCIMIRENTO*10), xEnemigo + (ESPARCIMIRENTO*10));
-                    let enemigo = new Enemy(juego, juego.rnd.integerInRange(100, 700), 0, 1);
+                    let enemigo = new Enemy(JUEGO, JUEGO.rnd.integerInRange(100, 700), 0, 1);
                     Enemigos.push(enemigo);
-                    juego.add.existing(enemigo);
-                    juego.physics.enable(enemigo);
+                    JUEGO.add.existing(enemigo);
+                    JUEGO.physics.enable(enemigo);
                     enemigo.load();
                 }
 
@@ -261,10 +270,8 @@ let Estado = {
             }
         }
 
-
-
         Enemigos.forEach(function (enemigo) {
-            juego.physics.arcade.collide(enemigo, Piso);
+            JUEGO.physics.arcade.collide(enemigo, Piso);
             if (enemigo != null) {
                 enemigo.updateElem();
             }
@@ -276,23 +283,18 @@ let Estado = {
             }
         });
 
-
         console.log(Balas.length);
 
         for (let i = 0; i < Enemigos.length; i++) {
             for (let j = 0; j < Balas.length; j++) {
                 if (Enemigos[i] != null && Balas[j] != null) {
                     if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Balas[j].x < 800) {
-                        if (izqoder == 0) {
-                            // Enemigos[i].x = 700;
-                            //  Balas[j].x = 800;
+                        if (!IzqierdaODerecha) {
                             Balas[j].kill();
                             Balas[j] = null;
                             Enemigos[i].kill();
                             Enemigos[i] = null;
-                        }
-                        if (izqoder == 1) {
-                            //  Enemigos[i].x = 700; Balas[j].x = 0;
+                        } else {
                             Balas[j].kill();
                             Balas[j] = null;
                             Enemigos[i].kill();
@@ -302,12 +304,11 @@ let Estado = {
                 }
             }
         }
-
     }
 };
 
-juego.state.add('principal', Estado);
-juego.state.start('principal');
+JUEGO.state.add('principal', Estado);
+JUEGO.state.start('principal');
 
 //Funciona masomeno pero es rapida
 function gaussianRand() {
