@@ -14,7 +14,7 @@ let Marco;
 let Cursors;
 let Piso;
 let Balas = [];
-let EnemigosACrear = [[450, 4], [750, 8], [1125, 16], [1500, 32]].reverse();
+let EnemigosACrear = [[450, 1], [750, 3], [1125, 5], [1500, 10]].reverse();
 let Enemigos = [];
 
 class ControladorFondo {
@@ -66,11 +66,12 @@ class Bala extends Phaser.Sprite {
             this.cargado = true;
         }
 
-        if (this.creacionTiempo - Date.now() > 1000) {
+        if (this.x > 800) {
             let indice = Balas.indexOf(this);
             if (indice > -1) {
-                 Balas.splice(indice, 1);
+                 Balas.remove(indice);
             }
+            this.kill();
         }
     }
 }
@@ -325,13 +326,11 @@ let Estado = {
 
         for (let i = 0; i < Enemigos.length; i++) {
             for (let j = 0; j < Balas.length; j++) {
-                if(Enemigos[i] === undefined) continue;//TODO fix hack
-
-                if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Balas[j].x < 800) {
+                if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Math.abs(Balas[j].y - (Enemigos[i].y + 22.5)) < 22.5) {
                     Balas[j].kill();
-                    Balas.splice(j, 1);
+                    Balas.remove(j);
                     Enemigos[i].kill();
-                    Enemigos.splice(i, 1);
+                    Enemigos.remove(i);
                 }
             }
         }
@@ -356,3 +355,18 @@ function gaussianRandom(start, end) {
     return Math.floor(start + gaussianRand() * (end - start + 1));
 }
 
+Array.prototype.swap = function (x,y) {
+    let b = this[x];
+    this[x] = this[y];
+    this[y] = b;
+    return this;
+};
+
+Array.prototype.remove = function(pos) {
+    for(let i = pos; i < this.length-1; i++) {
+        this.swap(i, i+1);
+    }
+    this.length--;
+
+    return this;
+};
