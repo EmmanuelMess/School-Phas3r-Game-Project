@@ -56,46 +56,110 @@
    	\section*{Ejemplos}
    	
     \subsection*{Instancia de clase}
+    El juego crea cada enemigo por medio de:
     
     \begin{verbbox}
-    	
+		let enemigo = new Enemy(JUEGO, 
+		        JUEGO.rnd.integerInRange(xEnemigo-ESPARCIMIRENTO, xEnemigo+ESPARCIMIRENTO),
+		        165);       
     \end{verbbox}
     \insertverbbox
-
+	
+	Donde \verb|JUEGO| es la instancia de \verb|Phaser.Game|; \verb|JUEGO.rnd.integerInRange(xEnemigo-ESPARCIMIRENTO, xEnemigo+ESPARCIMIRENTO)| es la posicion en x de el enemigo, dado por \verb|xEnemigo| que es el punto central donde se va a generar la oleada de enemigos y el \verb|ESPARCIMIENTO| que es el radio de generación; y, por ultimo, \verb|165| es la posición en y de el enemigo, que empieza desde la esquina superior izquierda como el 0 y aumenta positivamente hacia abajo.
+	
     \subsection*{Método publico}
-    
-    \begin{verbbox}
-
-    \end{verbbox}
-    \insertverbbox
+	En verdad todos los metodos de clase son publicos en JavaScript, aca se tiene un metodo publico:
+	
+	\begin{verbbox}
+		load() {
+		    this.animations.add('QuietMummy', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], 7, true);
+		    this.body.collideWorldBounds = true;
+		}
+	\end{verbbox}
+	\insertverbbox
+     
+    Este hace que se cargue el enemigo, primero carga una animacion que se repite al terminar y está a a 7 FPS y luego le dice a motor fisico que debe el enemigo debe colisionar con el piso.
     
    	\subsection*{Método privado}
+   	Si bien existiría quien presentare una solución, los métodos privados de clase no existen en JavaScript. La solución en cuestión es crear una función anónima en el  scope de un método publico:
    	
    	\begin{verbbox}
-   		
+		(function () {}).prototype.f = function() {
+		    let funcionPrivada = function (instancia) {
+		    	
+		    };
+		};
    	\end{verbbox}
    	\insertverbbox
+   	
+   	Cuando el scope de \verb|f| termina \verb|funcionPrivada| deja de existir, efectivamente haciendola privada. Pero se aprecian agujeros es esta idea al poco tiempo de usarla, quisierase usar de miembro deberasele pasar una instancia de la clase, aquí \verb|instancia|, ademas, quisierasela usar en otros metodos publicos o privados deberasela compiar a todos, produciendo los problemas comunes con codigo duplicado (necesidad de modificar todas las copias para cambiar la funcion, aumento del espacio que ocupan de los archivos fuente, etc.).
     
    	\subsection*{Clase}
    	
-   	\begin{verbbox}
-   		
+   	La clase \verb|Bala|, controla las balas.
+   	
+    \begin{verbbox}
+class Bala extends Phaser.Sprite {
+    constructor(juego, x, y) {
+        super(juego, x, y, 'bala');
+        Balas.push(this);
+        this.creacionTiempo = Date.now();
+        this.cargado = false;
+    }
+    
+    load() {
+        this.body.gravity = 0;
+        if (!Marco.getIzquierdaODerecha()) {
+            this.body.velocity.x = VELOCIDAD_BALAS;
+            this.scale.setTo(1, 1);
+        } else {
+            this.body.velocity.x = -VELOCIDAD_BALAS;
+            this.x = Marco.x - 30;
+            this.scale.setTo(-1, 1);
+        }
+    }
+    
+    updateElem() {
+        if (!this.cargado) {
+            this.load();
+            this.cargado = true;
+        }
+        
+        if (this.x > 800) {
+            let indice = Balas.indexOf(this);
+            if (indice > -1) {
+                Balas.remove(indice);
+            }
+            this.kill();
+        }
+    }
+}
    	\end{verbbox}
    	\insertverbbox  
    	
    	\subsection*{Atributo de clase}
+   	Este es un atributo de la clase \verb|ControladorFondo|, sirve para saber cuanto del fondo se movio hacia la izquierda, para poder dar posiciones absolutas del mundo:
    	
    	\begin{verbbox}
-   		
+		this.posicionAbsolutaDeInicioDeMundo = 0;
    	\end{verbbox}
    	\insertverbbox
    	
 	\subsection*{Constructor}
-	   	
-	\begin{verbbox}
-	   		
-	\end{verbbox}
-	\insertverbbox
+	Aca se tiene un constructor (de \verb|MarcoPlayer|):
+	 
+	 \begin{verbbox}
+		constructor(juego, x, y) {
+		    super(juego, x, y, 'Quieto');
+		    this.enfriadoBalasTiempoInicio = 0;
+		    this.balasEnCargador = BALAS_EN_CARGADOR;
+	   	    this.izquierdaODerecha = false;
+		    this.animacion = AnimacionEnum.quieto;
+		}
+	 \end{verbbox}
+	 \insertverbbox
+	 
+	 Se le pasa un juego y ambas coordenadas para posicionarlo. Llama a el constructor de la superclase \verb|Phaser.Sprite| en este caso. luego determina el valor de algunas variables de clase que luego se usaran. Puede apreciarse el uso de un enum en \verb|this.animacion =  AnimacionEnum.quieto;|.
     
    	\section*{Mejoras posibles}
    	\urldef\inserturl\url{https://github.com/EmmanuelMess/School-Phas3r-Game-Project/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3Aenhancement}
