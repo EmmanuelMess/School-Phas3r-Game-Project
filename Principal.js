@@ -5,7 +5,7 @@ const BALAS_EN_CARGADOR = 6;
 
 const JUEGO = new Phaser.Game(800, 220, Phaser.CANVAS, 'bloque_juego');
 
-const AnimacionEnum = Object.freeze({quieto:1, correr:2, salto:3, disparar:4, agachar:5, recargar:6});
+const AnimacionEnum = Object.freeze({ quieto: 1, correr: 2, salto: 3, disparar: 4, agachar: 5, recargar: 6 });
 
 let TileSprite;//para actualizar el movimiento del terreno, darle macarena
 let Controlador;
@@ -14,8 +14,12 @@ let Marco;
 let Cursors;
 let Piso;
 let Balas = [];
-let EnemigosACrear = [[450, 1], [750, 3], [1125, 5], [1500, 10]].reverse();
+let EnemigosACrear = [[450, 1], [750, 2], [1125, 4], [1500, 6], [1950, 7], [2400, 8], [2950, 9], [3450, 10]].reverse();
 let Enemigos = [];
+let Texto;
+let Cargador = 6;
+let Puntuacion = 0;
+let Cartel;
 
 class ControladorFondo {
     constructor() {
@@ -27,10 +31,10 @@ class ControladorFondo {
         this.posicionAbsolutaDeInicioDeMundo += dX;
 
         Marco.x -= dX;
-        Balas.forEach(function(bala) {
+        Balas.forEach(function (bala) {
             bala.x -= dX;
         });
-        Enemigos.forEach(function(enemigo) {
+        Enemigos.forEach(function (enemigo) {
             enemigo.x -= dX;
         });
     }
@@ -69,7 +73,7 @@ class Bala extends Phaser.Sprite {
         if (this.x > 800) {
             let indice = Balas.indexOf(this);
             if (indice > -1) {
-                 Balas.remove(indice);
+                Balas.remove(indice);
             }
             this.kill();
         }
@@ -88,7 +92,7 @@ class Enemy extends Phaser.Sprite {
     }
 
     rotarIzquierda() {
-        if(this.mirandoALaDerecha) return;
+        if (this.mirandoALaDerecha) return;
 
         this.scale.setTo(-1, 1);
         this.x += 37;
@@ -97,7 +101,7 @@ class Enemy extends Phaser.Sprite {
     }
 
     rotarDerecha() {
-        if(!this.mirandoALaDerecha) return;
+        if (!this.mirandoALaDerecha) return;
 
         this.scale.setTo(1, 1);
         this.x -= 37;
@@ -141,17 +145,17 @@ class MarcoPlayer extends Phaser.Sprite {
     }
 
     iniciarAnimacion(animacion) {
-        if(this.animacion === animacion) return;
+        if (this.animacion === animacion) return;
         let animacionNombre = 'Quiet';
         let frameRate = 3;
 
-        switch(animacion) {
+        switch (animacion) {
             case AnimacionEnum.correr:
                 animacionNombre = 'CorreR';
                 frameRate = 8;
                 break;
             case AnimacionEnum.salto:
-                animacionNombre = 'Salt0';
+                animacionNombre = 'SaltO';
                 frameRate = 6;
                 break;
             case AnimacionEnum.disparar:
@@ -159,8 +163,8 @@ class MarcoPlayer extends Phaser.Sprite {
                 frameRate = 9;
                 break;
             case AnimacionEnum.agachar:
-                animacionNombre = 'Agacha0';
-                frameRate = 3;
+                animacionNombre = 'AgachO';
+                frameRate = 6;
                 break;
             case AnimacionEnum.recargar:
                 animacionNombre = 'RecargA';
@@ -193,8 +197,8 @@ class MarcoPlayer extends Phaser.Sprite {
             this.body.velocity.y = 0;
         }
 
-        if(this.enfriadoAnimacion != null) {
-            if(Date.now() - this.enfriadoAnimacion[0] < this.enfriadoAnimacion[1]) {
+        if (this.enfriadoAnimacion != null) {
+            if (Date.now() - this.enfriadoAnimacion[0] < this.enfriadoAnimacion[1]) {
                 return;
             } else {
                 this.enfriadoAnimacion = null;
@@ -205,8 +209,9 @@ class MarcoPlayer extends Phaser.Sprite {
             this.iniciarAnimacion(AnimacionEnum.recargar);
             this.balasEnCargador = BALAS_EN_CARGADOR;
             this.enfriadoAnimacion = [Date.now(), 3000];
+            updateText("recarga");
         } else if (cursors.up.isDown) {
-            if(this.body.touching.down) {
+            if (this.body.touching.down) {
                 this.iniciarAnimacion(AnimacionEnum.salto);
                 this.body.velocity.y = -200;
             }
@@ -220,7 +225,7 @@ class MarcoPlayer extends Phaser.Sprite {
                 this.izquierdaODerecha = false;
                 this.scale.setTo(1, 1);
                 this.x += 3;
-                if (this.x >= 300 && Controlador.convertirPosicionRelativaAAbsoluta(this.x) < 2760) {
+                if (this.x >= 300 && Controlador.convertirPosicionRelativaAAbsoluta(this.x) < 3180) {
                     Controlador.moverFondoDerecha(3);
                 }
             }
@@ -236,6 +241,7 @@ class MarcoPlayer extends Phaser.Sprite {
             }
         } else if (cursors.space.isDown) {
             this.fire();
+            updateText("space");
         } else if (cursors.down.isDown) {
             this.iniciarAnimacion(AnimacionEnum.agachar);
         } else {
@@ -253,6 +259,8 @@ let Estado = {
         JUEGO.load.image('piso', 'assets/piso.png');
         JUEGO.load.image('fondoterreno', 'assets/fondo.png');//cargo mi imagen
         JUEGO.load.image('bala', 'assets/fireball.png');
+        JUEGO.load.image('gameover', 'assets/go.jpg');
+        JUEGO.load.image('Final', 'assets/Final.png');
         JUEGO.load.spritesheet('Correr', 'assets/Correr.png', 31.75, 40);//cargo mi conjunto de imagenes para marco y la nombro MarcoRun
         JUEGO.load.spritesheet('Quieto', 'assets/Quieto.png', 55, 42);
         JUEGO.load.spritesheet('QuietoMummy', 'assets/metalslug_mummy37x45.png', 37, 45);
@@ -264,6 +272,9 @@ let Estado = {
 
         TileSprite = JUEGO.add.tileSprite(0, 0, 800, 220, 'fondoterreno');//muestro por pantalla el terreno dandole los limites laterales, superior e inferior + el objeto
         Controlador = new ControladorFondo();
+
+        Texto = JUEGO.add.text(15, 5, 'Score: 0 Balas: 6/6', { fill: '#FFFFFF' });
+        Texto.scale.setTo(0.75, 0.75);
 
         Cursors = JUEGO.input.keyboard.addKeys({
             'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
@@ -299,10 +310,10 @@ let Estado = {
             let xEnemigo = lastEnemy[0];
             let cantEnemigos = lastEnemy[1];
 
-            if (Controlador.convertirPosicionRelativaAAbsoluta(Marco.x) > xEnemigo-350) {
+            if (Controlador.convertirPosicionRelativaAAbsoluta(Marco.x) > xEnemigo - 350) {
 
                 for (let i = 0; i < cantEnemigos; i++) {
-                    let enemigo = new Enemy(JUEGO, JUEGO.rnd.integerInRange(xEnemigo-ESPARCIMIRENTO, xEnemigo+ESPARCIMIRENTO), 165);
+                    let enemigo = new Enemy(JUEGO, JUEGO.rnd.integerInRange(400, 700), 165);
                     Enemigos.push(enemigo);
                     JUEGO.add.existing(enemigo);
                     JUEGO.physics.enable(enemigo);
@@ -311,6 +322,9 @@ let Estado = {
 
                 EnemigosACrear.pop();
             }
+        }
+        else if (Enemigos.length == 0) {
+            updateText("ganaste");
         }
 
         Enemigos.forEach(function (enemigo) {
@@ -325,14 +339,18 @@ let Estado = {
         });
 
         for (let i = 0; i < Enemigos.length; i++) {
+            if (Math.abs(Marco.x - Enemigos[i].x) < 37 && Math.abs(Marco.y - (Enemigos[i].y + 22.5)) < 22.5) {
+                updateText("perdiste");
+            }
             for (let j = 0; j < Balas.length; j++) {
-                if(Enemigos[i] === undefined) continue; //TODO fix hack
+                if (Enemigos[i] === undefined) continue; //TODO fix hack
 
                 if (Math.abs(Balas[j].x - Enemigos[i].x) < 37 && Math.abs(Balas[j].y - (Enemigos[i].y + 22.5)) < 22.5) {
                     Balas[j].kill();
                     Balas.remove(j);
                     Enemigos[i].kill();
                     Enemigos.remove(i);
+                    updateText('kill');
                 }
             }
         }
@@ -357,18 +375,50 @@ function gaussianRandom(start, end) {
     return Math.floor(start + gaussianRand() * (end - start + 1));
 }
 
-Array.prototype.swap = function (x,y) {
+Array.prototype.swap = function (x, y) {
     let b = this[x];
     this[x] = this[y];
     this[y] = b;
     return this;
 };
 
-Array.prototype.remove = function(pos) {
-    for(let i = pos; i < this.length-1; i++) {
-        this.swap(i, i+1);
+Array.prototype.remove = function (pos) {
+    for (let i = pos; i < this.length - 1; i++) {
+        this.swap(i, i + 1);
     }
     this.length--;
 
     return this;
 };
+
+function pausecomp(millis) {
+    var date = new Date();
+    var curDate = null;
+    do { curDate = new Date(); }
+    while (curDate - date < millis);
+}
+
+function updateText(action) {
+    if (action == 'space') {
+        Cargador--;
+        Texto.text = "Score: " + Puntuacion + " Balas: " + Cargador + "/6";
+        //  action = 'ganaste';
+    }
+    if (action == 'recarga') {
+        Cargador = 6;
+        Texto.text = "Score: " + Puntuacion + " Balas: " + Cargador + "/6";
+    }
+    if (action == 'kill') {
+        Puntuacion += 100;
+        Texto.text = "Score: " + Puntuacion + " Balas: " + Cargador + "/6";
+    }
+    if (action == 'ganaste') {
+        Cartel = JUEGO.add.tileSprite(260, -50, 350, 400, 'Final');
+        Cartel.scale.setTo(0.75, 0.75);
+    }
+    if (action == 'perdiste') {
+        pausecomp(1000);
+        Cartel = JUEGO.add.tileSprite(0, 0, 800, 220, 'gameover');
+    }
+
+}
